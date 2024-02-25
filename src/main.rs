@@ -50,9 +50,12 @@ async fn submit_contact_form(
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    println!("Starting server on {}", CONFIG.api_address);
+    println!(
+        "Starting server on host: {}; port: {}",
+        CONFIG.api_host, CONFIG.api_port
+    );
     HttpServer::new(|| App::new().route("/submit_form", web::post().to(submit_contact_form)))
-        .bind(&CONFIG.api_address)?
+        .bind(format!("{}:{}", CONFIG.api_host, CONFIG.api_port))?
         .run()
         .await
 }

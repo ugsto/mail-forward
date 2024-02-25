@@ -10,7 +10,8 @@ impl PartialConfigLoader for EnvConfigLoader {
     fn load_partial_config() -> Result<PartialConfig, PartialConfigLoadError> {
         dotenv().ok();
 
-        let api_address = env::var("API_ADDRESS").ok();
+        let api_host = env::var("HOST").ok();
+        let api_port = env::var("PORT").ok().map(|p| p.parse::<u16>().unwrap());
         let smtp_server = env::var("SMTP_SERVER").ok();
         let smtp_username = env::var("SMTP_USERNAME").ok();
         let smtp_password = env::var("SMTP_PASSWORD").ok();
@@ -18,7 +19,8 @@ impl PartialConfigLoader for EnvConfigLoader {
         let email_to = env::var("EMAIL_TO").ok();
 
         let partial_config = PartialConfig {
-            api_address,
+            api_host,
+            api_port,
             smtp_server,
             smtp_username,
             smtp_password,

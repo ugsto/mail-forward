@@ -2,7 +2,8 @@ use super::errors::ConfigLoadError;
 
 #[derive(Debug)]
 pub struct Config {
-    pub api_address: String,
+    pub api_host: String,
+    pub api_port: u16,
     pub smtp_server: String,
     pub smtp_username: String,
     pub smtp_password: String,
@@ -12,7 +13,8 @@ pub struct Config {
 
 #[derive(Default, Debug)]
 pub struct PartialConfig {
-    pub api_address: Option<String>,
+    pub api_host: Option<String>,
+    pub api_port: Option<u16>,
     pub smtp_server: Option<String>,
     pub smtp_username: Option<String>,
     pub smtp_password: Option<String>,
@@ -25,9 +27,12 @@ impl TryFrom<PartialConfig> for Config {
 
     fn try_from(config: PartialConfig) -> Result<Self, Self::Error> {
         Ok(Self {
-            api_address: config
-                .api_address
-                .ok_or(ConfigLoadError::MissingProperty("api_address"))?,
+            api_host: config
+                .api_host
+                .ok_or(ConfigLoadError::MissingProperty("api_host"))?,
+            api_port: config
+                .api_port
+                .ok_or(ConfigLoadError::MissingProperty("api_port"))?,
             smtp_server: config
                 .smtp_server
                 .ok_or(ConfigLoadError::MissingProperty("smtp_server"))?,
@@ -53,7 +58,8 @@ mod tests {
 
     fn partial_config() -> PartialConfig {
         PartialConfig {
-            api_address: Some("http://example.com".to_string()),
+            api_host: Some("http://example.com".to_string()),
+            api_port: Some(8080),
             smtp_server: Some("smtp.example.com".to_string()),
             smtp_username: Some("user@example.com".to_string()),
             smtp_password: Some("password".to_string()),
@@ -69,7 +75,8 @@ mod tests {
 
         assert!(config_result.is_ok());
         let config = config_result.unwrap();
-        assert_eq!(config.api_address, "http://example.com");
+        assert_eq!(config.api_host, "http://example.com");
+        assert_eq!(config.api_port, 8080);
         assert_eq!(config.smtp_server, "smtp.example.com");
         assert_eq!(config.smtp_username, "user@example.com");
         assert_eq!(config.smtp_password, "password");
@@ -77,16 +84,15 @@ mod tests {
         assert_eq!(config.email_to, "to@example.com");
     }
 
-    // Tests for each field missing in PartialConfig
     #[test]
-    fn missing_api_address() {
+    fn missing_api_host() {
         let mut partial_config = partial_config();
-        partial_config.api_address = None;
+        partial_config.api_host = None;
         let config_result = Config::try_from(partial_config);
         assert!(config_result.is_err());
         assert!(matches!(
             config_result.unwrap_err(),
-            ConfigLoadError::MissingProperty("api_address")
+            ConfigLoadError::MissingProperty("api_host")
         ));
     }
 }
