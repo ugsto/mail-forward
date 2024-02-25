@@ -11,20 +11,23 @@ pub fn send_email(
     email_to: &str,
 ) -> Result<(), ServiceError> {
     let email = Message::builder()
-        .from(
-            email_from
-                .parse()
-                .map_err(|_| ServiceError::InternalServerError)?,
-        )
-        .to(email_to
-            .parse()
-            .map_err(|_| ServiceError::InternalServerError)?)
+        .from(email_from.parse().map_err(|e| {
+            eprintln!("Failed to parse email address: {}", e);
+            ServiceError::InternalServerError
+        })?)
+        .to(email_to.parse().map_err(|e| {
+            eprintln!("Failed to parse email address: {}", e);
+            ServiceError::InternalServerError
+        })?)
         .subject(&form.subject)
         .body(format!(
             "Name: {}\nEmail: {}\nMessage: {}",
             form.name, form.email, form.message
         ))
-        .map_err(|_| ServiceError::InternalServerError)?;
+        .map_err(|e| {
+            eprintln!("Failed to build email: {}", e);
+            ServiceError::InternalServerError
+        })?;
 
     let creds = Credentials::new(smtp_username.to_string(), smtp_password.to_string());
 
@@ -36,5 +39,7 @@ pub fn send_email(
     mailer
         .send(&email)
         .map_err(|_| ServiceError::InternalServerError)?;
+
+    println!("Email sent successfully! {:?}", email);
     Ok(())
 }

@@ -1,6 +1,6 @@
 use actix_web::{error::InternalError, http::StatusCode, web, App, HttpResponse, HttpServer};
-use config::CONFIG;
-use std::env;
+use lazy_static::lazy_static;
+use std::process::exit;
 use validator::Validate;
 
 mod config;
@@ -8,8 +8,23 @@ mod email_service;
 mod errors;
 mod models;
 
+use config::{
+    models::Config, strategies::env_config_loader::EnvConfigLoader, traits::PartialConfigLoader,
+};
 use errors::ServiceError;
 use models::ContactForm;
+
+lazy_static! {
+    static ref CONFIG: Config =
+        Config::try_from(EnvConfigLoader::load_partial_config().unwrap_or_else(|e| {
+            eprintln!("Failed to load configuration: {}", e);
+            exit(1)
+        }))
+        .unwrap_or_else(|e| {
+            eprintln!("Failed to parse configuration: {}", e);
+            exit(1)
+        });
+}
 
 async fn submit_contact_form(
     form: web::Form<ContactForm>,
@@ -35,12 +50,9 @@ async fn submit_contact_form(
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    println!("Starting server on {}", CONFIG.api_address);
     HttpServer::new(|| App::new().route("/submit_form", web::post().to(submit_contact_form)))
-        .bind(format!(
-            "{}:{}",
-            env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string()),
-            env::var("PORT").unwrap_or_else(|_| "8080".to_string())
-        ))?
+        .bind(&CONFIG.api_address)?
         .run()
         .await
 }
