@@ -32,13 +32,17 @@ pub fn send_email(
     let creds = Credentials::new(smtp_username.to_string(), smtp_password.to_string());
 
     let mailer = SmtpTransport::relay(smtp_server)
-        .map_err(|_| ServiceError::InternalServerError)?
+        .map_err(|e| {
+            eprintln!("Failed to create SMTP transport: {}", e);
+            ServiceError::InternalServerError
+        })?
         .credentials(creds)
         .build();
 
-    mailer
-        .send(&email)
-        .map_err(|_| ServiceError::InternalServerError)?;
+    mailer.send(&email).map_err(|e| {
+        eprintln!("Failed to send email: {}", e);
+        ServiceError::InternalServerError
+    })?;
 
     println!("Email sent successfully! {:?}", email);
     Ok(())
