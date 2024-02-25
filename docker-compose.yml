@@ -1,0 +1,10 @@
+version: "3"
+
+services:
+  mail-forward:
+    build: .
+    ports:
+      - 8080:8080
+    environment:
+      - API_ADDRESS=0.0.0.0:8080
+    env_file: .env
